@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller Mecánico Kokito – Los Troncos</title>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ===== RESET Y ESTILOS BASE ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            display: flex;
+            height: 100vh;
+            background: #f4f6f9;
+        }
+
+        /* ===== BARRA LATERAL ===== */
+        .sidebar {
+            width: 250px;
+            background: #1e2a3a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .sidebar .logo {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.4em;
+            font-weight: bold;
+            border-bottom: 1px solid #34495e;
+            padding-bottom: 15px;
+        }
+        .sidebar nav a {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: 0.2s;
+            font-size: 1.05em;
+            margin: 4px 0;
+        }
+        .sidebar nav a i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1em;
+        }
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #34495e;
+            color: white;
+            border-radius: 0 20px 20px 0;
+        }
+
+        /* ===== CONTENIDO PRINCIPAL ===== */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .module {
+            display: none;
+        }
+        .module.active {
+            display: block;
+        }
+        .module h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        /* ===== TARJETAS DEL DASHBOARD ===== */
+        .cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            flex: 1 1 200px;
+            text-align: center;
+            border-left: 5px solid;
+        }
+        .card i {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .card h3 {
+            font-size: 2.2em;
+            margin: 5px 0;
+        }
+        .card p {
+            color: #7f8c8d;
+        }
+        .card.clientes { border-color: #3498db; color: #3498db; }
+        .card.vehiculos { border-color: #2ecc71; color: #2ecc71; }
+        .card.ordenes { border-color: #e67e22; color: #e67e22; }
+        .card.stock { border-color: #e74c3c; color: #e74c3c; }
+
+        /* ===== TABLAS Y BOTONES ===== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #3498db;
+            color: white;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            margin: 2px;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn:hover { opacity: 0.85; }
+
+        /* ===== MODAL ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+        }
+        .modal-actions {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        /* ===== SECCIÓN ÓRDENES: DETALLES DINÁMICOS ===== */
+        .detalle-servicio, .detalle-repuesto {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .detalle-servicio input, .detalle-repuesto input {
+            flex: 1;
+        }
+        .badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra lateral -->
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="fas fa-wrench"></i> Kokito
+        </div>
+        <nav>
+            <a href="#" class="nav-link active" data-module="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="#" class="nav-link" data-module="clientes"><i class="fas fa-users"></i> Clientes</a>
+            <a href="#" class="nav-link" data-module="vehiculos"><i class="fas fa-car"></i> Vehículos</a>
+            <a href="#" class="nav-link" data-module="ordenes"><i class="fas fa-clipboard-list"></i> Órdenes</a>
+            <a href="#" class="nav-link" data-module="inventario"><i class="fas fa-boxes"></i> Inventario</a>
+        </nav>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <!-- Módulo Dashboard -->
+        <section id="dashboard" class="module active">
+            <h2><i class="fas fa-tachometer-alt"></i> Panel de Control</h2>
+            <div class="cards" id="dashboardCards"></div>
+        </section>
+
+        <!-- Módulo Clientes -->
+        <section id="clientes" class="module">
+            <h2><i class="fas fa-users"></i> Gestión de Clientes</h2>
+            <button class="btn btn-primary" onclick="abrirModalCliente()"><i class="fas fa-plus"></i> Nuevo Cliente</button>
+            <table id="tablaClientes" style="margin-top:20px;">
+                <thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Módulo Vehículos -->
+        <section id="vehiculos" class="module">
+            <h2><i class="fas fa-car"></i> Gestión de Vehículos</h2>
+            <button class="btn btn-primary" onclick="abrirModalVehiculo()"><i class="fas fa-plus"></i> Nuevo Vehículo</button>
+            <table id="tablaVehiculos" style="margin-top:20px;">
+                <thead><tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Año</th><th>Cliente</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Módulo Órdenes de Servicio -->
+        <section id="ordenes" class="module">
+            <h2><i class="fas fa-clipboard-list"></i> Órdenes de Servicio</h2>
+            <button class="btn btn-primary" onclick="abrirModalOrden()"><i class="fas fa-plus"></i> Nueva Orden</button>
+            <table id="tablaOrdenes" style="margin-top:20px;">
+                <thead><tr><th>N° Orden</th><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Total</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Módulo Inventario -->
+        <section id="inventario" class="module">
+            <h2><i class="fas fa-boxes"></i> Inventario de Repuestos</h2>
+            <button class="btn btn-primary" onclick="abrirModalRepuesto()"><i class="fas fa-plus"></i> Nuevo Repuesto</button>
+            <table id="tablaInventario" style="margin-top:20px;">
+                <thead><tr><th>Nombre</th><th>Precio (Bs)</th><th>Cantidad</th><th>Acciones</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <!-- MODALES GENÉRICOS (se reutilizan) -->
+    <!-- Modal Cliente -->
+    <div id="modalCliente" class="modal">
+        <div class="modal-content">
+            <h3 id="tituloModalCliente">Nuevo Cliente</h3>
+            <div class="form-group"><label>Nombre completo</label><input type="text" id="nombreCliente" required></div>
+            <div class="form-group"><label>Teléfono</label><input type="text" id="telefonoCliente"></div>
+            <div class="form-group"><label>Correo electrónico</label><input type="email" id="correoCliente"></div>
+            <input type="hidden" id="editClienteId">
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalCliente')">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarCliente()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Vehículo -->
+    <div id="modalVehiculo" class="modal">
+        <div class="modal-content">
+            <h3 id="tituloModalVehiculo">Nuevo Vehículo</h3>
+            <div class="form-group"><label>Placa</label><input type="text" id="placaVehiculo" required></div>
+            <div class="form-group"><label>Marca</label><input type="text" id="marcaVehiculo" required></div>
+            <div class="form-group"><label>Modelo</label><input type="text" id="modeloVehiculo"></div>
+            <div class="form-group"><label>Año</label><input type="number" id="anioVehiculo" min="1990" max="2030"></div>
+            <div class="form-group"><label>Cliente</label><select id="clienteVehiculo"></select></div>
+            <input type="hidden" id="editVehiculoId">
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalVehiculo')">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarVehiculo()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Orden de Servicio (más complejo) -->
+    <div id="modalOrden" class="modal">
+        <div class="modal-content" style="max-width:650px;">
+            <h3 id="tituloModalOrden">Nueva Orden de Servicio</h3>
+            <div class="form-group"><label>Cliente</label><select id="clienteOrden" onchange="cargarVehiculosPorCliente()"><option value="">Seleccione cliente</option></select></div>
+            <div class="form-group"><label>Vehículo</label><select id="vehiculoOrden"><option value="">Primero elija cliente</option></select></div>
+            <div class="form-group"><label>Fecha</label><input type="date" id="fechaOrden"></div>
+            <h4>Servicios</h4>
+            <div id="listaServicios"></div>
+            <button class="btn btn-primary btn-sm" onclick="agregarServicio()">+ Añadir Servicio</button>
+            <h4 style="margin-top:15px;">Repuestos utilizados</h4>
+            <div id="listaRepuestosOrden"></div>
+            <button class="btn btn-primary btn-sm" onclick="agregarRepuestoOrden()">+ Añadir Repuesto</button>
+            <p style="margin-top:15px; font-weight:bold;">Total: Bs <span id="totalOrden">0.00</span></p>
+            <input type="hidden" id="editOrdenId">
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalOrden')">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarOrden()">Guardar Orden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Repuesto (inventario) -->
+    <div id="modalRepuesto" class="modal">
+        <div class="modal-content">
+            <h3 id="tituloModalRepuesto">Nuevo Repuesto</h3>
+            <div class="form-group"><label>Nombre</label><input type="text" id="nombreRepuesto" required></div>
+            <div class="form-group"><label>Precio (Bs)</label><input type="number" id="precioRepuesto" step="0.01" required></div>
+            <div class="form-group"><label>Cantidad en stock</label><input type="number" id="cantidadRepuesto" min="0" required></div>
+            <input type="hidden" id="editRepuestoId">
+            <div class="modal-actions">
+                <button class="btn" onclick="cerrarModal('modalRepuesto')">Cancelar</button>
+                <button class="btn btn-success" onclick="guardarRepuesto()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== ALMACENAMIENTO LOCAL =====
+        const Storage = {
+            getClientes: () => JSON.parse(localStorage.getItem('kokito_clientes')) || [],
+            setClientes: (data) => localStorage.setItem('kokito_clientes', JSON.stringify(data)),
+            getVehiculos: () => JSON.parse(localStorage.getItem('kokito_vehiculos')) || [],
+            setVehiculos: (data) => localStorage.setItem('kokito_vehiculos', JSON.stringify(data)),
+            getOrdenes: () => JSON.parse(localStorage.getItem('kokito_ordenes')) || [],
+            setOrdenes: (data) => localStorage.setItem('kokito_ordenes', JSON.stringify(data)),
+            getRepuestos: () => JSON.parse(localStorage.getItem('kokito_repuestos')) || [],
+            setRepuestos: (data) => localStorage.setItem('kokito_repuestos', JSON.stringify(data)),
+        };
+
+        // ===== NAVEGACIÓN ENTRE MÓDULOS =====
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                e.target.closest('.nav-link').classList.add('active');
+                const module = e.target.closest('.nav-link').dataset.module;
+                document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+                document.getElementById(module).classList.add('active');
+                // Refrescar módulo si es necesario
+                if (module === 'dashboard') cargarDashboard();
+            });
+        });
+
+        // ===== FUNCIONES DE MODALES =====
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ===== DASHBOARD =====
+        function cargarDashboard() {
+            const clientes = Storage.getClientes().length;
+            const vehiculos = Storage.getVehiculos().length;
+            const ordenesAbiertas = Storage.getOrdenes().filter(o => !o.cerrada).length;
+            const stockBajo = Storage.getRepuestos().filter(r => r.cantidad < 5).length;
+            document.getElementById('dashboardCards').innerHTML = `
+                <div class="card clientes"><i class="fas fa-users"></i><h3>${clientes}</h3><p>Clientes</p></div>
+                <div class="card vehiculos"><i class="fas fa-car"></i><h3>${vehiculos}</h3><p>Vehículos</p></div>
+                <div class="card ordenes"><i class="fas fa-clipboard-list"></i><h3>${ordenesAbiertas}</h3><p>Órdenes abiertas</p></div>
+                <div class="card stock"><i class="fas fa-exclamation-triangle"></i><h3>${stockBajo}</h3><p>Repuestos stock bajo</p></div>
+            `;
+        }
+
+        // ===== CLIENTES =====
+        function abrirModalCliente(id = null) {
+            document.getElementById('editClienteId').value = id || '';
+            if (id) {
+                const c = Storage.getClientes().find(cl => cl.id == id);
+                document.getElementById('nombreCliente').value = c.nombre;
+                document.getElementById('telefonoCliente').value = c.telefono;
+                document.getElementById('correoCliente').value = c.correo;
+                document.getElementById('tituloModalCliente').textContent = 'Editar Cliente';
+            } else {
+                document.getElementById('nombreCliente').value = '';
+                document.getElementById('telefonoCliente').value = '';
+                document.getElementById('correoCliente').value = '';
+                document.getElementById('tituloModalCliente').textContent = 'Nuevo Cliente';
+            }
+            abrirModal('modalCliente');
+        }
+
+        function guardarCliente() {
+            const id = document.getElementById('editClienteId').value;
+            const cliente = {
+                id: id || Date.now(),
+                nombre: document.getElementById('nombreCliente').value.trim(),
+                telefono: document.getElementById('telefonoCliente').value.trim(),
+                correo: document.getElementById('correoCliente').value.trim()
+            };
+            if (!cliente.nombre) return alert('El nombre es obligatorio');
+            let clientes = Storage.getClientes();
+            if (id) {
+                clientes = clientes.map(c => c.id == id ? cliente : c);
+            } else {
+                clientes.push(cliente);
+            }
+            Storage.setClientes(clientes);
+            cerrarModal('modalCliente');
+            listarClientes();
+            cargarDashboard();
+        }
+
+        function eliminarCliente(id) {
+            if (!confirm('¿Eliminar cliente?')) return;
+            let clientes = Storage.getClientes().filter(c => c.id != id);
+            Storage.setClientes(clientes);
+            listarClientes();
+            listarVehiculos(); // por si tenía vehículos asociados (no se eliminan en esta demo)
+            cargarDashboard();
+        }
+
+        function listarClientes() {
+            const clientes = Storage.getClientes();
+            const tbody = document.querySelector('#tablaClientes tbody');
+            tbody.innerHTML = clientes.map(c => `
+                <tr>
+                    <td>${c.nombre}</td><td>${c.telefono}</td><td>${c.correo}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalCliente(${c.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarCliente(${c.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        // ===== VEHÍCULOS =====
+        function cargarSelectClientes(selectId) {
+            const select = document.getElementById(selectId);
+            const clientes = Storage.getClientes();
+            select.innerHTML = '<option value="">Seleccione cliente</option>' +
+                clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        }
+
+        function abrirModalVehiculo(id = null) {
+            cargarSelectClientes('clienteVehiculo');
+            document.getElementById('editVehiculoId').value = id || '';
+            if (id) {
+                const v = Storage.getVehiculos().find(vh => vh.id == id);
+                document.getElementById('placaVehiculo').value = v.placa;
+                document.getElementById('marcaVehiculo').value = v.marca;
+                document.getElementById('modeloVehiculo').value = v.modelo;
+                document.getElementById('anioVehiculo').value = v.anio;
+                document.getElementById('clienteVehiculo').value = v.clienteId;
+                document.getElementById('tituloModalVehiculo').textContent = 'Editar Vehículo';
+            } else {
+                document.getElementById('placaVehiculo').value = '';
+                document.getElementById('marcaVehiculo').value = '';
+                document.getElementById('modeloVehiculo').value = '';
+                document.getElementById('anioVehiculo').value = '';
+                document.getElementById('clienteVehiculo').value = '';
+                document.getElementById('tituloModalVehiculo').textContent = 'Nuevo Vehículo';
+            }
+            abrirModal('modalVehiculo');
+        }
+
+        function guardarVehiculo() {
+            const id = document.getElementById('editVehiculoId').value;
+            const vehiculo = {
+                id: id || Date.now(),
+                placa: document.getElementById('placaVehiculo').value.trim(),
+                marca: document.getElementById('marcaVehiculo').value.trim(),
+                modelo: document.getElementById('modeloVehiculo').value.trim(),
+                anio: document.getElementById('anioVehiculo').value,
+                clienteId: document.getElementById('clienteVehiculo').value
+            };
+            if (!vehiculo.placa || !vehiculo.marca || !vehiculo.clienteId) return alert('Complete los campos obligatorios');
+            let vehiculos = Storage.getVehiculos();
+            if (id) {
+                vehiculos = vehiculos.map(v => v.id == id ? vehiculo : v);
+            } else {
+                vehiculos.push(vehiculo);
+            }
+            Storage.setVehiculos(vehiculos);
+            cerrarModal('modalVehiculo');
+            listarVehiculos();
+            cargarDashboard();
+        }
+
+        function eliminarVehiculo(id) {
+            if (!confirm('¿Eliminar vehículo?')) return;
+            Storage.setVehiculos(Storage.getVehiculos().filter(v => v.id != id));
+            listarVehiculos();
+            cargarDashboard();
+        }
+
+        function listarVehiculos() {
+            const vehiculos = Storage.getVehiculos();
+            const clientes = Storage.getClientes();
+            const tbody = document.querySelector('#tablaVehiculos tbody');
+            tbody.innerHTML = vehiculos.map(v => {
+                const cliente = clientes.find(c => c.id == v.clienteId);
+                return `<tr>
+                    <td>${v.placa}</td><td>${v.marca}</td><td>${v.modelo}</td><td>${v.anio}</td>
+                    <td>${cliente ? cliente.nombre : 'Sin cliente'}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalVehiculo(${v.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarVehiculo(${v.id})"><i class="fas fa-trash"></i></button>
+                    </td></tr>`;
+            }).join('');
+        }
+
+        // ===== ÓRDENES DE SERVICIO =====
+        let serviciosTemporales = []; // { descripcion, precio }
+        let repuestosTemporales = []; // { repuestoId, cantidad }
+
+        function abrirModalOrden(id = null) {
+            // Reset temporales
+            serviciosTemporales = [];
+            repuestosTemporales = [];
+            document.getElementById('editOrdenId').value = id || '';
+            cargarSelectClientes('clienteOrden');
+            document.getElementById('vehiculoOrden').innerHTML = '<option value="">Primero elija cliente</option>';
+            document.getElementById('fechaOrden').value = new Date().toISOString().split('T')[0];
+            document.getElementById('listaServicios').innerHTML = '';
+            document.getElementById('listaRepuestosOrden').innerHTML = '';
+            document.getElementById('totalOrden').textContent = '0.00';
+            if (id) {
+                const orden = Storage.getOrdenes().find(o => o.id == id);
+                document.getElementById('clienteOrden').value = orden.clienteId;
+                cargarVehiculosPorCliente();
+                setTimeout(() => { document.getElementById('vehiculoOrden').value = orden.vehiculoId; }, 50);
+                document.getElementById('fechaOrden').value = orden.fecha;
+                serviciosTemporales = [...orden.servicios];
+                repuestosTemporales = [...orden.repuestos];
+                actualizarListaServicios();
+                actualizarListaRepuestos();
+                calcularTotalOrden();
+                document.getElementById('tituloModalOrden').textContent = 'Editar Orden';
+            } else {
+                document.getElementById('clienteOrden').value = '';
+                document.getElementById('tituloModalOrden').textContent = 'Nueva Orden de Servicio';
+            }
+            abrirModal('modalOrden');
+        }
+
+        function cargarVehiculosPorCliente() {
+            const clienteId = document.getElementById('clienteOrden').value;
+            const vehiculos = Storage.getVehiculos().filter(v => v.clienteId == clienteId);
+            const select = document.getElementById('vehiculoOrden');
+            select.innerHTML = '<option value="">Seleccione vehículo</option>' +
+                vehiculos.map(v => `<option value="${v.id}">${v.placa} - ${v.marca} ${v.modelo}</option>`).join('');
+        }
+
+        function agregarServicio() {
+            serviciosTemporales.push({ descripcion: '', precio: 0 });
+            actualizarListaServicios();
+        }
+
+        function actualizarListaServicios() {
+            const div = document.getElementById('listaServicios');
+            div.innerHTML = serviciosTemporales.map((s, i) => `
+                <div class="detalle-servicio">
+                    <input type="text" placeholder="Descripción" value="${s.descripcion}" onchange="serviciosTemporales[${i}].descripcion=this.value; calcularTotalOrden()">
+                    <input type="number" placeholder="Precio Bs" value="${s.precio}" step="0.01" onchange="serviciosTemporales[${i}].precio=parseFloat(this.value)||0; calcularTotalOrden()">
+                    <button class="btn btn-danger btn-sm" onclick="serviciosTemporales.splice(${i},1); actualizarListaServicios(); calcularTotalOrden()"><i class="fas fa-trash"></i></button>
+                </div>`).join('');
+        }
+
+        function agregarRepuestoOrden() {
+            repuestosTemporales.push({ repuestoId: '', cantidad: 1 });
+            actualizarListaRepuestos();
+        }
+
+        function actualizarListaRepuestos() {
+            const repuestos = Storage.getRepuestos();
+            const div = document.getElementById('listaRepuestosOrden');
+            div.innerHTML = repuestosTemporales.map((r, i) => `
+                <div class="detalle-repuesto">
+                    <select onchange="repuestosTemporales[${i}].repuestoId=this.value; calcularTotalOrden()">
+                        <option value="">Seleccione repuesto</option>
+                        ${repuestos.map(rep => `<option value="${rep.id}" ${rep.id==r.repuestoId?'selected':''}>${rep.nombre} (Bs ${rep.precio})</option>`).join('')}
+                    </select>
+                    <input type="number" placeholder="Cantidad" value="${r.cantidad}" min="1" onchange="repuestosTemporales[${i}].cantidad=parseInt(this.value)||1; calcularTotalOrden()">
+                    <button class="btn btn-danger btn-sm" onclick="repuestosTemporales.splice(${i},1); actualizarListaRepuestos(); calcularTotalOrden()"><i class="fas fa-trash"></i></button>
+                </div>`).join('');
+        }
+
+        function calcularTotalOrden() {
+            let totalServicios = serviciosTemporales.reduce((sum, s) => sum + (parseFloat(s.precio) || 0), 0);
+            const repuestos = Storage.getRepuestos();
+            let totalRepuestos = repuestosTemporales.reduce((sum, r) => {
+                const rep = repuestos.find(rp => rp.id == r.repuestoId);
+                return sum + (rep ? rep.precio * (r.cantidad || 0) : 0);
+            }, 0);
+            document.getElementById('totalOrden').textContent = (totalServicios + totalRepuestos).toFixed(2);
+        }
+
+        function guardarOrden() {
+            const id = document.getElementById('editOrdenId').value;
+            const clienteId = document.getElementById('clienteOrden').value;
+            const vehiculoId = document.getElementById('vehiculoOrden').value;
+            const fecha = document.getElementById('fechaOrden').value;
+            if (!clienteId || !vehiculoId || !fecha) return alert('Complete los campos obligatorios');
+            // Validar que servicios/repuestos tengan al menos un elemento o descripción
+            const orden = {
+                id: id || Date.now(),
+                clienteId,
+                vehiculoId,
+                fecha,
+                servicios: serviciosTemporales.filter(s => s.descripcion.trim() !== ''),
+                repuestos: repuestosTemporales.filter(r => r.repuestoId !== ''),
+                cerrada: id ? (Storage.getOrdenes().find(o=>o.id==id)?.cerrada || false) : false
+            };
+            let ordenes = Storage.getOrdenes();
+            if (id) {
+                ordenes = ordenes.map(o => o.id == id ? orden : o);
+            } else {
+                ordenes.push(orden);
+            }
+            Storage.setOrdenes(ordenes);
+            cerrarModal('modalOrden');
+            listarOrdenes();
+            cargarDashboard();
+        }
+
+        function eliminarOrden(id) {
+            if (!confirm('¿Eliminar orden?')) return;
+            Storage.setOrdenes(Storage.getOrdenes().filter(o => o.id != id));
+            listarOrdenes();
+            cargarDashboard();
+        }
+
+        function listarOrdenes() {
+            const ordenes = Storage.getOrdenes();
+            const clientes = Storage.getClientes();
+            const vehiculos = Storage.getVehiculos();
+            const tbody = document.querySelector('#tablaOrdenes tbody');
+            tbody.innerHTML = ordenes.map(o => {
+                const cliente = clientes.find(c => c.id == o.clienteId);
+                const vehiculo = vehiculos.find(v => v.id == o.vehiculoId);
+                const total = calcularTotalOrdenGuardada(o);
+                return `<tr>
+                    <td>#${o.id.toString().slice(-4)}</td>
+                    <td>${o.fecha}</td>
+                    <td>${cliente ? cliente.nombre : '---'}</td>
+                    <td>${vehiculo ? vehiculo.placa : '---'}</td>
+                    <td>Bs ${total.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalOrden(${o.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarOrden(${o.id})"><i class="fas fa-trash"></i></button>
+                    </td></tr>`;
+            }).join('');
+        }
+
+        function calcularTotalOrdenGuardada(orden) {
+            const totalServ = orden.servicios.reduce((s, serv) => s + (parseFloat(serv.precio)||0), 0);
+            const repuestos = Storage.getRepuestos();
+            const totalRep = orden.repuestos.reduce((s, r) => {
+                const rep = repuestos.find(rp => rp.id == r.repuestoId);
+                return s + (rep ? rep.precio * (r.cantidad||0) : 0);
+            }, 0);
+            return totalServ + totalRep;
+        }
+
+        // ===== INVENTARIO DE REPUESTOS =====
+        function abrirModalRepuesto(id = null) {
+            document.getElementById('editRepuestoId').value = id || '';
+            if (id) {
+                const r = Storage.getRepuestos().find(rp => rp.id == id);
+                document.getElementById('nombreRepuesto').value = r.nombre;
+                document.getElementById('precioRepuesto').value = r.precio;
+                document.getElementById('cantidadRepuesto').value = r.cantidad;
+                document.getElementById('tituloModalRepuesto').textContent = 'Editar Repuesto';
+            } else {
+                document.getElementById('nombreRepuesto').value = '';
+                document.getElementById('precioRepuesto').value = '';
+                document.getElementById('cantidadRepuesto').value = '';
+                document.getElementById('tituloModalRepuesto').textContent = 'Nuevo Repuesto';
+            }
+            abrirModal('modalRepuesto');
+        }
+
+        function guardarRepuesto() {
+            const id = document.getElementById('editRepuestoId').value;
+            const repuesto = {
+                id: id || Date.now(),
+                nombre: document.getElementById('nombreRepuesto').value.trim(),
+                precio: parseFloat(document.getElementById('precioRepuesto').value) || 0,
+                cantidad: parseInt(document.getElementById('cantidadRepuesto').value) || 0
+            };
+            if (!repuesto.nombre) return alert('Nombre obligatorio');
+            let repuestos = Storage.getRepuestos();
+            if (id) {
+                repuestos = repuestos.map(r => r.id == id ? repuesto : r);
+            } else {
+                repuestos.push(repuesto);
+            }
+            Storage.setRepuestos(repuestos);
+            cerrarModal('modalRepuesto');
+            listarInventario();
+            cargarDashboard();
+        }
+
+        function eliminarRepuesto(id) {
+            if (!confirm('¿Eliminar repuesto?')) return;
+            Storage.setRepuestos(Storage.getRepuestos().filter(r => r.id != id));
+            listarInventario();
+            cargarDashboard();
+        }
+
+        function listarInventario() {
+            const repuestos = Storage.getRepuestos();
+            const tbody = document.querySelector('#tablaInventario tbody');
+            tbody.innerHTML = repuestos.map(r => `
+                <tr>
+                    <td>${r.nombre} ${r.cantidad < 5 ? '<span class="badge">Bajo stock</span>' : ''}</td>
+                    <td>${r.precio.toFixed(2)}</td>
+                    <td>${r.cantidad}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="abrirModalRepuesto(${r.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="eliminarRepuesto(${r.id})"><i class="fas fa-trash"></i></button>
+                    </td></tr>`).join('');
+        }
+
+        // ===== INICIALIZACIÓN =====
+        function inicializar() {
+            cargarDashboard();
+            listarClientes();
+            listarVehiculos();
+            listarOrdenes();
+            listarInventario();
+            // Datos de ejemplo si está vacío (opcional)
+            if (Storage.getClientes().length === 0) {
+                Storage.setClientes([
+                    { id: 1, nombre: 'Juan Pérez', telefono: '77712345', correo: 'juan@mail.com' },
+                    { id: 2, nombre: 'María López', telefono: '77754321', correo: 'maria@mail.com' }
+                ]);
+                Storage.setVehiculos([
+                    { id: 1, placa: 'ABC-123', marca: 'Toyota', modelo: 'Corolla', anio: 2020, clienteId: 1 },
+                    { id: 2, placa: 'XYZ-789', marca: 'Nissan', modelo: 'Sentra', anio: 2019, clienteId: 2 }
+                ]);
+                Storage.setRepuestos([
+                    { id: 1, nombre: 'Filtro de aceite', precio: 45.00, cantidad: 12 },
+                    { id: 2, nombre: 'Pastillas de freno', precio: 120.00, cantidad: 3 },
+                    { id: 3, nombre: 'Batería 12V', precio: 350.00, cantidad: 5 }
+                ]);
+                listarClientes();
+                listarVehiculos();
+                listarInventario();
+                cargarDashboard();
+            }
+        }
+        window.onload = inicializar;
+    </script>
+</body>
+</html>
